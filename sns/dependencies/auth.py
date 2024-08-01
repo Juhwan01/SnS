@@ -11,6 +11,7 @@ secret_key = conf_vars.jwt_secret_key
 jwt_expire_minutes = conf_vars.jwt_expire_minutes
 
 
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 

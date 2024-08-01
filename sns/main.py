@@ -16,6 +16,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=[{"name": "auth", "description": "Authentication"}],
 )
 
 
@@ -65,6 +66,8 @@ async def exception_handler(request: Request, exc: Exception):
     logging.error(traceback.format_exc())
     response = JSONResponse(status_code=500, content={"context": exc})
     return await add_cors_to_response(request=request, response=response)
+
+
 
 import uvicorn
 if __name__ == "__main__":

@@ -28,19 +28,6 @@ class UserProfileDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-class PostCreateDTO(BaseModel):
-    content: str
-    image_url: Optional[HttpUrl] = None
-
-class PostDTO(BaseModel):
-    id: int
-    content: str
-    image_url: Optional[HttpUrl] = None
-    created_at: datetime
-    updated_at: datetime
-    author: UserProfileDTO
-    likes_count: int
-    comments_count: int
 
 class CommentCreateDTO(BaseModel):
     content: str
