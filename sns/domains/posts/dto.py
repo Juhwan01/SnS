@@ -20,3 +20,4 @@ class PostDTO(BaseModel):
     author: UserProfileDTO
     likes_count: int
     comments_count: int
+    
