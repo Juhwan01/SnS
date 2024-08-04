@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from pydantic import BaseModel
-import jwt
+from jose import jwt
 from .config import get_config
 
 ALGORITHM = "HS256"

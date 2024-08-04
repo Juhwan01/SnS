@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from dependencies.database import provide_session
 from domains.users.services import UserService
-from domains.users.dto import UserSignUpDTO, UserLoginDTO, Token, UserProfileDTO
+from domains.users.dto import UserSignUpDTO, UserLoginDTO, Token, UserProfileDTO, UserFollowerDTO
 from domains.users.models import User
 import logging
 
@@ -51,11 +51,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
 @router.get("/me", response_model=UserProfileDTO)
 async def read_users_me(
-    current_user: User = Depends(UserService.get_current_user),
+    token_data: str = Header(...),
     db: AsyncSession = Depends(provide_session)
 ):
     user_service = UserService(db)
-    return await user_service.get_user_profile(current_user)
+    token = token_data.split("Bearer ")[1]
+    user = await user_service.get_current_user(token=token)
+    return await user_service.get_user_profile(user=user)
 
 @router.put("/me", response_model=UserProfileDTO)
 async def update_user_profile(
@@ -66,3 +68,46 @@ async def update_user_profile(
     user_service = UserService(db)
     updated_user = await user_service.update_user_profile(current_user.id, payload)
     return await user_service.get_user_profile(updated_user)
+
+@router.get("/get_followers", response_model=UserFollowerDTO)
+async def get_followers(
+    token_data: str = Header(...),
+    db: AsyncSession = Depends(provide_session)
+):
+    user_service = UserService(db)
+    token = token_data.split("Bearer ")[1]
+    followers = await user_service.get_followers(token=token)
+    print(followers)
+    return UserFollowerDTO(followers=followers)
+
+@router.post("/set_follow")
+async def set_follow(
+    username: str,
+    token_data: str = Header(...),
+    db: AsyncSession = Depends(provide_session)
+    ):
+    user_service = UserService(db)
+    token = token_data.split("Bearer ")[1]
+    result = await user_service.set_follow(user_name=username, token=token)
+    return result
+
+@router.get("/get_following")
+async def get_followers(
+    token_data: str = Header(...),
+    db: AsyncSession = Depends(provide_session)
+):
+    user_service = UserService(db)
+    token = token_data.split("Bearer ")[1]
+    followering = await user_service.get_following(token=token)
+    return UserFollowerDTO(followers=followering)
+
+@router.delete("/unfollow")
+async def unflow_user(
+    target_user: str,
+    token_data: str = Header(...),
+    db: AsyncSession = Depends(provide_session)
+):
+    user_service = UserService(db)
+    token = token_data.split("Bearer ")[1]
+    result = await user_service.unfollow(token=token,user_name=target_user)
+    return result

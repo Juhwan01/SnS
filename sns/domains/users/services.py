@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from .repositories import UserRepository
-from .dto import UserSignUpDTO, UserLoginDTO, Token, UserProfileDTO
+from .dto import UserSignUpDTO, UserLoginDTO, Token, UserProfileDTO, UserFollowerDTO
 from .models import User
 from dependencies.database import provide_session
+#import jwt
 
 # 이 값들은 환경 변수나 설정 파일에서 가져오는 것이 좋습니다.
 SECRET_KEY = "your-secret-key"
@@ -43,7 +44,7 @@ class UserService:
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
 
-    async def get_current_user(self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(provide_session)) -> User:
+    async def get_current_user(self, token: str = Depends(oauth2_scheme)) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -56,13 +57,12 @@ class UserService:
                 raise credentials_exception
         except JWTError:
             raise credentials_exception
-        user_service = UserService(db)  # UserService 인스턴스를 생성
-        user = await user_service._repository.get_user_by_username(username)
+        user = await self._repository.get_user_by_username(username)
         if user is None:
             raise credentials_exception
         return user
     
-
+                
     def _hash_password(self, password: str) -> str:
         return pwd_context.hash(password)
 
@@ -94,3 +94,85 @@ class UserService:
 
     async def update_user_profile(self, user_id: int, payload: UserProfileDTO) -> User:
         return await self._repository.update_user(user_id, payload)
+    
+    async def get_followers(self, token:str=Depends(oauth2_scheme))->UserFollowerDTO:
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+        user = await self._repository.get_user_by_username(username)
+        result = await self._repository.get_followers(user=user)
+        revalue = []
+        for i in range(len(result)):
+            print(result[i].username)
+            revalue.append(result[i].username)
+        print(revalue)
+        return revalue
+    
+    async def get_following(self,token:str=Depends(oauth2_scheme))->UserFollowerDTO:
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+        user = await self._repository.get_user_by_username(username)
+        result = await self._repository.get_following(user=user)
+        revalue = []
+        for i in range(len(result)):
+            print(result[i].username)
+            revalue.append(result[i].username)
+        print(revalue)
+        return revalue
+
+    async def set_follow(self, user_name:str, token:str=Depends(oauth2_scheme)):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+        admin = await self._repository.get_user_by_username(username)
+        target = await self._repository.get_user_by_username(username=user_name)
+        result = await self._repository.set_follow(admin=admin,target=target)
+        
+        return result
+    
+    async def unfollow(self, user_name:str, token:str=Depends(oauth2_scheme)):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+        admin = await self._repository.get_user_by_username(username)
+        target = await self._repository.get_user_by_username(username=user_name)
+        result = await self._repository.unfollow(admin=admin,target=target)
+        
+        return result

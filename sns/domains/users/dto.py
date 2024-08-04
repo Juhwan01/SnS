@@ -14,6 +14,9 @@ class UserLoginDTO(BaseModel):
     username: str
     password: str
 
+class UserFollowerDTO(BaseModel):
+    followers:List[str]
+
 class Token(BaseModel):
     access_token: str
     token_type: str
